@@ -1,5 +1,5 @@
 
-# Name(Thermometer001)
+# Thermometer001
  
 非接触型体温計
  
