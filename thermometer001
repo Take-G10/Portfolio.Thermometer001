@@ -1,0 +1,118 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_MLX90614.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define N 5 //測定する回数
+#define STATUS A0
+
+// LCD初期設定
+void display_text(char* text);
+void display_temp(float number);
+#define SCREEN_WIDTH 128 
+#define SCREEN_HEIGHT 64 
+#define OLED_RESET     4 
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// スピーカー定数設定
+#define BEATTIME 100 
+#define OK_SOUND 1760
+#define NG_SOUND 2500
+#define BUZZER_PIN 25
+#define BUZZER_CHANEL 1
+void callZeldaSound();
+
+
+// 温度センサー初期設定
+#define TEMP_THRESHOLD 37.0
+#define ADJUST_TEMP 2.7 //補正用
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+
+void setup() {
+  Serial.begin(9600);
+  mlx.begin();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextColor(SSD1306_WHITE); 
+  display_text("Temp?");
+  ledcSetup(BUZZER_CHANEL, 12000, 8);
+  ledcAttachPin(BUZZER_PIN, BUZZER_CHANEL);
+}
+
+void loop() {
+
+static float temp_bak = -1;
+static int count = 0;
+static float sum = 0;
+
+float temp = mlx.readObjectTempC();
+if (count) {
+  sum = temp + ADJUST_TEMP;
+  if (count > N) {
+    play_sound(OK_SOUND, BEATTIME, 2);
+    display_temp(sum);
+    Serial.println(sum);
+    if(sum > 38.0) {
+      play_sound(NG_SOUND, BEATTIME, 8);
+      count = 0;
+      sum = 0;
+    }else {
+      callZeldaSound();
+      count = 0;
+      sum = 0;
+    }
+  } else {
+    count++;
+  }
+} else if (temp_bak != -1 && temp - temp_bak > 2.0) {
+  
+  Serial.println("Found");
+  count++;
+}
+temp_bak = temp;
+delay(500);
+}
+
+void display_text(char* text){
+      display.clearDisplay();
+      display.setTextSize(2);     
+      display.setCursor(0, 0);
+      display.cp437(true); 
+      display.print(text);
+      display.display();
+}
+void display_temp(float number){
+      display.clearDisplay();
+      display.setTextSize(4);   
+      display.setCursor(0, 0);   
+      display.cp437(true);        
+      display.print(number);
+      display.display();
+}
+void play_sound(float freq, int beattime, int number){
+  for(int i=0; i<number; i++){
+    ledcWriteTone(BUZZER_CHANEL, freq);
+    delay(beattime);
+    ledcWriteTone(BUZZER_CHANEL, 0);
+    delay(beattime);    
+  }
+}
+void callZeldaSound() {
+  ledcWriteTone(BUZZER_CHANEL, 3136); // ソ
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 2960); // ♯ファ
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 2489); // ♯レ
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 1760); // ラ
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 1661); // ♯ソ
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 2637); // ミ
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 3322); // ♯ソ
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 4186); // ド
+  delay(BEATTIME);
+  ledcWriteTone(BUZZER_CHANEL, 0);    // 音を止める
+}
