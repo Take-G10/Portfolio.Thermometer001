@@ -5,7 +5,10 @@
  
 # DEMO
  
-デモ動画予定
+
+https://user-images.githubusercontent.com/90190827/132255277-0c0254eb-542a-4c04-9437-7ec852c37c10.mp4
+
+
  
 # Features
 * コロナの影響により検温する機会が増えたため手軽に検温できるシステムを作成しています。
